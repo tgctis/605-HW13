@@ -1,0 +1,19 @@
+#!/bin/sh
+
+killThisProcess ()	{	# $1
+	echo $1
+	ps -als 		|	\
+	grep "$1" 		|	\
+	grep -v grep 		|	\
+	grep -v kill 		|	\
+	grep -v vi 		|	\
+	awk ' { print $1 }'	|	\
+	while read x
+	do
+		echo "kill -9 $x"
+		kill -9 $x 2> /dev/null
+	done
+	
+}
+killThisProcess "rmiregistry"
+killThisProcess "java"
