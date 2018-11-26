@@ -6,7 +6,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 /**
- * qServerUdp.java
+ * qServerTcp.java
  *
  * Version:
  * $Id$
@@ -15,30 +15,29 @@ import java.util.ArrayList;
  * $Log$
  *
  * Serves a quote to all those who connect
+ * Now with concurrent TCP/IP!
  *
  * @author  Timothy Chisholm
  * @author  Jake Groszewski
  *
  *
  */
-public class qServerUdp extends Thread{
+public class qServerTcp extends Thread{
     private ServerSocket serverSocket;
     private int port = 32010;
     private static int servCount = 0;
-    private int id = servCount;
     private static ArrayList<String> quotes;
 
 
-    private qServerUdp(int newPort, ArrayList<String> theQuotes){
-        servCount++;
+    private qServerTcp(int newPort, ArrayList<String> theQuotes){
         this.port = newPort;
         quotes = theQuotes;
         openServer();
     }
 
-    private qServerUdp(int newPort){
-        port = newPort;
+    private qServerTcp(int newPort){
         servCount++;
+        port = newPort;
         openServer();
     }
 
@@ -66,10 +65,14 @@ public class qServerUdp extends Thread{
         try{
             for(;;){
                 Socket client = serverSocket.accept();
+                System.out.println("Current # Connections : " + servCount);
+                System.out.println("Waiting...");
+                try{sleep(5000);}catch(Exception e){e.printStackTrace();}
                 System.out.println(client);
                 PrintWriter writer = new PrintWriter(client.getOutputStream(), true);
                 writer.println(getQuote());
                 client.close();
+                servCount--;
             }
         }catch(Exception e){
             e.printStackTrace();
@@ -86,7 +89,7 @@ public class qServerUdp extends Thread{
                 Socket client = serverSocket.accept();
                 System.out.println(client);
                 //someone has connected, start a new server thread...
-                qServerUdp aServer = new qServerUdp(0); //first available port
+                qServerTcp aServer = new qServerTcp(0); //first available port
                 PrintWriter writer = new PrintWriter(client.getOutputStream(), true);
                 aServer.start();
                 //let the client know of a new port
@@ -100,7 +103,7 @@ public class qServerUdp extends Thread{
     }
 
     public static String usageString(){
-        return "Usage: java qServerUdp [LISTENING_PORT][QUOTES_FILE]";
+        return "Usage: java qServerTcp [LISTENING_PORT][QUOTES_FILE]";
     }
 
     public static void main(String[] args){
@@ -130,7 +133,7 @@ public class qServerUdp extends Thread{
             }
         }
 
-        qServerUdp server = new qServerUdp(port, quotes);
+        qServerTcp server = new qServerTcp(port, quotes);
         server.listen();
     }
 }

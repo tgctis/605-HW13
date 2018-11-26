@@ -3,8 +3,10 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import static java.lang.Thread.sleep;
+
 /**
- * qClientUdp.java
+ * qClientTcp.java
  *
  * Version:
  * $Id$
@@ -13,16 +15,17 @@ import java.net.UnknownHostException;
  * $Log$
  *
  * Will connect to a server and grab a quote of the day
+ * Now with TCP/IP!
  *
  * @author  Timothy Chisholm
  * @author  Jake Groszewski
  *
  *
  */
-public class qClientUdp {
+public class qClientTcp {
 
     //Usage string
-    private static final String usage = "Usage: java qClientUdp [SERVER_URI][PORT]";
+    private static final String usage = "Usage: java qClientTcp [SERVER_URI][PORT]";
 
     public static void main(String[] args){
         int socketNum = 32010;
