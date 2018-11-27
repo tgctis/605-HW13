@@ -2,18 +2,19 @@
 
 #all:
     ./killIt
-    # javac BloodBath.java
-    # javac Forge.java
     javac StorageServer.java
     javac Forge.java
+    javac Anvil.java
 	rmic StorageServer
+	clear
 	rmiregistry &
 	sleep 4
-	# java BloodBath &
 	java StorageServer 100 &
 	sleep 4
-	java Forge &
-	java Forge 1
+	java Forge 1 localhost SteamHammerStorage &
+	java Anvil 2 localhost SteamHammerStorage &
+	java Forge 3 localhost SteamHammerStorage &
+	java Anvil 4 localhost SteamHammerStorage
 
 
 #clean:
