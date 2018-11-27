@@ -15,7 +15,7 @@ public class Forge {
     public void smelt(){
         try {
             int runs = 0;
-            SteamHammer obj = (SteamHammer) Naming.lookup("//"+this.server+"/"+this.rmiName);
+            SteamHammer obj = (SteamHammer) Naming.lookup("//"+server+"/"+rmiName);
 
             System.out.println("Forge #" + forgeID + " is working as a Consumer with " + obj.version() + "\n");
             while(runs < 100000){

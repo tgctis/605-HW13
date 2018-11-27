@@ -84,16 +84,18 @@ public class StorageServer extends UnicastRemoteObject
     public static void main(String[] args){
         int capacity;
 
-        if(args.length != 1){
+        if(args.length != 3){
             System.err.println(usageMessage());
             System.exit(-1);
         }
 
         try{
             capacity = Integer.parseInt(args[0]);
+            String server = args[1];
+            String rmiName = args[2];
             SteamHammer storage = new StorageServer(capacity);
-            Naming.rebind("//localhost/SteamHammerStorage", storage);
-            System.out.println("SteamHammer at pressure.");
+            Naming.rebind("//" + server + "/" + rmiName, storage);
+            System.out.println("SteamHammer at pressure on //" + server + "/" + rmiName + ".");
         }catch(Exception e){
             e.printStackTrace();
         }
