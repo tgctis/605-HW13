@@ -2,20 +2,23 @@
 
 #all:
     ./killIt
-	javac *Tcp.java
+    javac BloodBath.java
+    javac Forge.java
 	# javac HelloImplementation.java
 	# rmic HelloImplementation
+	rmic Anvil
 	# javac HelloC.java HelloServer.java
-	# rmiregistry &
+	rmiregistry &
 	sleep 4
-	java qServerTcp 32010 quotes.txt &
+	# java qServerTcp 32010 quotes.txt &
+	java BloodBath &
 	sleep 4
 	# java HelloC
-	java qClientTcp localhost 32010
-	java qClientTcp localhost 32010
-	java qClientTcp localhost 32010
+	# java qClientTcp localhost 32010
+	java Forge
 
 
 #clean:
 	rm -f *class
+	./killIt
 	
