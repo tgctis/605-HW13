@@ -1,9 +1,6 @@
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
+import java.rmi.Naming;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 
 /**
@@ -22,53 +19,22 @@ import java.util.ArrayList;
  *
  *
  */
-public class StorageServer extends Thread{
-    private ServerSocket serverSocket;
+public class StorageServer extends UnicastRemoteObject
+        implements SteamHammer {
     private static Bucket bucket;
-
-    /**
-     * This parameterized constructor is used to create new instances of the server
-     * so multiple clients can connect.
-     * @param port the port (usually 0, first available) to be used.
-     */
-    public StorageServer(int port){
-        try{
-            serverSocket = new ServerSocket(port);
-        }catch(Exception e){
-            System.err.println(e.getMessage());
-            System.exit(-1);
-        }
-    }
+    private static final String version = "Version 0.3";
 
     /**
      * Primary Constructor - Initializes the storage
-     * @param port
      * @param initialCapacity
      */
-    public StorageServer(int port, int initialCapacity){
+    public StorageServer(int initialCapacity) throws RemoteException {
         try{
-            serverSocket = new ServerSocket(port);
             bucket = new Bucket(initialCapacity);
         }catch(Exception e){
             System.err.println(e.getMessage());
             System.exit(-1);
         }
-    }
-
-    /**
-     * Gets the capacity of the bucket
-     * @return bucket size
-     */
-    private int getCapacity(){
-        return bucket.capacity;
-    }
-
-    /**
-     * Returns the local port used for connecting to the client
-     * @return local port of this instance of server
-     */
-    private int getLocalPort(){
-        return serverSocket.getLocalPort();
     }
 
     /**
@@ -80,68 +46,34 @@ public class StorageServer extends Thread{
     }
 
     /**
-     * Listens on a specific port, and assigns connections to different ports to allow for simultaneous connections
+     * Gets the version number, for RMI purposes
+     * @return the version number string.
      */
-    public void listen(){
-        try {
-            for (; ; ) {
-                Socket client = serverSocket.accept();
-                System.out.println("New connection from : " + client.toString());
-                StorageServer aServer = new StorageServer(0);
-                PrintWriter writer = new PrintWriter(client.getOutputStream(), true);
-                aServer.start();
-                writer.println(aServer.getLocalPort());
-                client.close();
-            }
-        }catch(SocketException se){
-            System.out.println("Client has disconnected.");
-        }catch(Exception e){
-            e.printStackTrace();
+    public String version(){
+        return version;
+    }
+
+    public void consume(int[] types, int[] amounts){
+        synchronized (bucket){
+            bucket.multiConsume(types, amounts);
         }
     }
 
-    /**
-     * Runs the instance of the server, one per client
-     */
-    public void run(){
-        try{
-            Socket client = serverSocket.accept();
-//            PrintWriter writer = new PrintWriter(client.getOutputStream(), true);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
-            while(true){
-                synchronized (bucket){
-                    bucket.notify();
-                    String message = reader.readLine();
+    public void produce(int type, int amount){
+        synchronized (bucket){
+            bucket.produce(type, amount);
+        }
+    }
 
-//                    writer.println("GO");
-                    if(message.equalsIgnoreCase("PRODUCE")){
-                        int type = Integer.parseInt(reader.readLine());
-                        int amount = Integer.parseInt(reader.readLine());
-                        bucket.produce(type, amount);
-                        System.out.println("Total Produced = " + bucket.produced);
-                    }else if(message.equalsIgnoreCase("CONSUME")){
-                        int numTypes = 3;
-                        int type;
-                        int amount;
-                        int[] types = new int[numTypes];
-                        int[] amounts = new int[numTypes];
-                        for(int index = 0; index < numTypes; index++) {
-                            type = Integer.parseInt(reader.readLine());
-                            amount = Integer.parseInt(reader.readLine());
-                            types[index] = type;
-                            amounts[index] = amount;
-                        }
-                        bucket.multiConsume(types, amounts);
-                        System.out.println("Total Consumed = " + bucket.consumed);
-                    }
+    public int produced(){
+        synchronized (bucket) {
+            return bucket.produced;
+        }
+    }
 
-                    bucket.wait();
-                }
-            }
-        }catch(SocketException se){
-            System.out.println("Client has disconnected.");
-        }catch(Exception e){
-            e.printStackTrace();
+    public int consumed(){
+        synchronized (bucket) {
+            return bucket.consumed;
         }
     }
 
@@ -150,25 +82,22 @@ public class StorageServer extends Thread{
      * @param args
      */
     public static void main(String[] args){
-        int port;
         int capacity;
-        StorageServer server = null;
 
-        if(args.length != 2){
+        if(args.length != 1){
             System.err.println(usageMessage());
             System.exit(-1);
         }
 
-        try {
-            port = Integer.parseInt(args[0]);
-            capacity = Integer.parseInt(args[1]);
-            server = new StorageServer(port, capacity);
+        try{
+            capacity = Integer.parseInt(args[0]);
+            SteamHammer storage = new StorageServer(capacity);
+            Naming.rebind("//localhost/SteamHammerStorage", storage);
+            System.out.println("SteamHammer at pressure.");
         }catch(Exception e){
             e.printStackTrace();
-            System.exit(-1);
         }
 
-        server.listen();
     }
 
     /**
@@ -205,7 +134,7 @@ public class StorageServer extends Thread{
          * @param type type of widget to make
          * @param amount amount of widget to make
          */
-        private synchronized void produce(int type, int amount){
+        public synchronized void produce(int type, int amount){
             if(canProduce(type, amount)){
                 for(int count = 0; count < amount; count++){
                     container.add(new Widget(type));
@@ -256,7 +185,7 @@ public class StorageServer extends Thread{
          * @param type type of widget to eat
          * @param amount amount to consume
          */
-        private synchronized void consume(int type, int amount){
+        public synchronized void consume(int type, int amount){
             if(canConsume(type, amount)){
                 ArrayList<Widget> tmp = new ArrayList<>(container);
                 container.clear();
